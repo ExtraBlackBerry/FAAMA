@@ -5,7 +5,7 @@ from sklearn.metrics import (
     silhouette_score, davies_bouldin_score, calinski_harabasz_score
 )
 
-class ModelEvaluator:
+class ModelEvaluatorInterface:
     @staticmethod
     def evaluate_classifier(test_x: np.ndarray, test_y: np.ndarray, model) -> dict[str, float]:
         y_pred = model.predict(test_x) # Maybe passing predictions instead of model would be better
@@ -50,7 +50,6 @@ if __name__ == "__main__":
     from sklearn.linear_model import LinearRegression
     from sklearn.cluster import KMeans
     from sklearn.model_selection import train_test_split
-    from model_evaluator import ModelEvaluator
 
     # Load dataset
     iris = load_iris()
@@ -60,17 +59,17 @@ if __name__ == "__main__":
     # Classification
     rf = RandomForestClassifier(random_state=69)
     rf.fit(X_train, y_train)
-    rf_results = ModelEvaluator.evaluate_classifier(X_test, y_test, rf)
+    rf_results = ModelEvaluatorInterface.evaluate_classifier(X_test, y_test, rf)
     print('rf results:', rf_results)
 
     # Regression
     lr = LinearRegression()
     lr.fit(X_train, y_train)
-    lr_results = ModelEvaluator.evaluate_regressor(X_test, y_test, lr)
+    lr_results = ModelEvaluatorInterface.evaluate_regressor(X_test, y_test, lr)
     print('lr results:', lr_results)
 
     # Clustering
     km = KMeans(n_clusters=3, random_state=69)
     km.fit(X)
-    km_results = ModelEvaluator.evaluate_clusterer(X, km)
+    km_results = ModelEvaluatorInterface.evaluate_clusterer(X, km)
     print('km results:', km_results)
