@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import (
-    accuracy_score, confusion_matrix, precision_score, recall_score, f1_score, roc_auc_score
+    accuracy_score, confusion_matrix, precision_score, recall_score, f1_score, roc_auc_score,
+    mean_absolute_error, mean_squared_error, r2_score, root_mean_squared_error
 )
 
 class ModelEvaluator:
@@ -22,7 +23,14 @@ class ModelEvaluator:
     
     @staticmethod
     def evaluate_regressor(test_x: np.ndarray, test_y: np.ndarray, model) -> dict[str, float]:
-        return {}
+        y_pred = model.predict(test_x)
+        results = {
+            "mae": mean_absolute_error(test_y, y_pred),
+            "mse": mean_squared_error(test_y, y_pred),
+            "r2": r2_score(test_y, y_pred),
+            "rmse": root_mean_squared_error(test_y, y_pred) # Shiny new function
+        }
+        return results
     
     @staticmethod
     def evaluate_clusterer(test_x: np.ndarray, test_y: np.ndarray, model) -> dict[str, float]:
