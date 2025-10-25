@@ -1,7 +1,8 @@
 import numpy as np
 from sklearn.metrics import (
     accuracy_score, confusion_matrix, precision_score, recall_score, f1_score, roc_auc_score,
-    mean_absolute_error, mean_squared_error, r2_score, root_mean_squared_error
+    mean_absolute_error, mean_squared_error, r2_score, root_mean_squared_error,
+    silhouette_score, davies_bouldin_score, calinski_harabasz_score
 )
 
 class ModelEvaluator:
@@ -33,5 +34,11 @@ class ModelEvaluator:
         return results
     
     @staticmethod
-    def evaluate_clusterer(test_x: np.ndarray, test_y: np.ndarray, model) -> dict[str, float]:
-        return {}
+    def evaluate_clusterer(train_x: np.ndarray, model) -> dict[str, float]:
+        # Takes training data since clustering is unsupervised
+        results = {
+            "silhouette": silhouette_score(train_x, model.labels_),
+            "davies_bouldin": davies_bouldin_score(train_x, model.labels_),
+            "calinski_harabasz": calinski_harabasz_score(train_x, model.labels_)
+        }
+        return results
