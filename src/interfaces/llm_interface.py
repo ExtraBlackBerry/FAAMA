@@ -1,11 +1,12 @@
 import os
 from dotenv import load_dotenv
+from openai import OpenAI
 
 
 
 class LLMInterface:
     
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str =  None):
         load_dotenv()
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.model_name = model_name
