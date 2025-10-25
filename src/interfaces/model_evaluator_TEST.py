@@ -3,7 +3,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LinearRegression
 from sklearn.cluster import KMeans
 from sklearn.model_selection import train_test_split
-from model_evaluator import ModelEvaluator
+from interfaces.model_evaluator import ModelEvaluator
 
 # Load dataset
 iris = load_iris()
