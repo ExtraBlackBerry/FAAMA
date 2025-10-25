@@ -25,3 +25,11 @@ class LLMInterface:
         #only returns the string content of the response in the future implement more complex response handling
         return response.choices[0].message.content
     
+
+#unit test
+if __name__ == "__main__":
+    llm = LLMInterface(model_name="gpt-3.5-turbo")
+    prompt = "Please summarize the following text."
+    message = "Artificial Intelligence is transforming the world."
+    response = llm.send_message(message, prompt)
+    print("LLM Response:", response)
