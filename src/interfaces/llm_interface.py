@@ -1,5 +1,5 @@
 import os
-from typing import optional
+from typing import Optional
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -7,7 +7,7 @@ from openai import OpenAI
 
 class LLMInterface:
     
-    def __init__(self, model_name: optional[str] =  None):
+    def __init__(self, model_name: Optional[str] =  None):
         load_dotenv()
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.model_name = model_name
