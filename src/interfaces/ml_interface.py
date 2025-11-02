@@ -5,7 +5,8 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.cluster import KMeans
 
 class MachineLearningInterface:
     
@@ -46,14 +47,50 @@ class MachineLearningInterface:
     def split_data(self, X, y, test_size: float = 0.2, random_state: int = 42):
         return train_test_split(X, y, test_size=test_size, random_state=random_state)
     
-    def train(self, model, X_train, y_train):
-        self.model = model
+    def train_classifier(self, X_train, y_train, n_estimators: int = 100):
+        self.model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
         self.model.fit(X_train, y_train)
+        return self.model
+    
+    def train_regressor(self, X_train, y_train, n_estimators: int = 100):
+        self.model = RandomForestRegressor(n_estimators=n_estimators, random_state=42)
+        self.model.fit(X_train, y_train)
+        return self.model
+    
+    def train_clusterer(self, X_train, n_clusters: int = 3):
+        self.model = KMeans(n_clusters=n_clusters, random_state=42)
+        self.model.fit(X_train)
+        return self.model
+    
+    def train_custom(self, model, X_train, y_train=None):
+        self.model = model
+        if y_train is not None:
+            # Supervised learning
+            self.model.fit(X_train, y_train)
+        else:
+            # Unsupervised learning
+            self.model.fit(X_train)
         return self.model
     
     def predict(self, X):
         return self.model.predict(X)
     
+    def predict_proba(self, X):
+        if hasattr(self.model, 'predict_proba'):
+            return self.model.predict_proba(X)
+        else:
+            raise AttributeError("Current model doesn't support probability predictions")
+    
+    def get_cluster_labels(self, X=None):
+        if hasattr(self.model, 'labels_'):
+            if X is None:
+                return self.model.labels_
+            else:
+                return self.model.predict(X)
+        else:
+            raise AttributeError("Current model is not a clustering model")
+
+
     def save_model(self, model_name: str):
         model_path = self.models_dir / f"{model_name}.joblib"
         preprocessors_path = self.models_dir / f"{model_name}_preprocessors.joblib"
@@ -77,34 +114,3 @@ class MachineLearningInterface:
         self.vectorizer = preprocessors['vectorizer']
         
         return self.model
-
-
-# # Example
-# if __name__ == "__main__":
-#     from sklearn.ensemble import RandomForestClassifier
-    
-#     # Initialize
-#     ml = MachineLearningInterface()
-    
-#     # Create sample data
-#     data = pd.DataFrame({
-#         'text': ["Great product!", "Terrible experience", "Good value"],
-#         'rating': [5, 1, 4],
-#         'label': ['positive', 'negative', 'positive']
-#     })
-    
-#     # Preprocess
-#     X_text = ml.preprocess_text(data['text'])
-#     X_numeric = ml.preprocess_numeric(data[['rating']])
-#     X = np.hstack([X_text, X_numeric])
-#     y = ml.encode_labels(data['label'])
-    
-#     # Split
-#     X_train, X_test, y_train, y_test = ml.split_data(X, y)
-    
-#     # Train
-#     model = RandomForestClassifier()
-#     ml.train(model, X_train, y_train)
-    
-#     # Save
-#     ml.save_model("sentiment_model")
