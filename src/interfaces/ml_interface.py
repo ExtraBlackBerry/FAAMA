@@ -22,55 +22,40 @@ class MachineLearningInterface:
         self.model = None
     
     def load_data(self, filepath: str, file_type: str = "csv"):
-        filepath = Path(filepath) if Path(filepath).is_absolute() else self.data_dir / filepath
-        
         if file_type == "csv":
-            return pd.read_csv(filepath)
+            pd.read_csv(filepath)
         elif file_type == "json":
-            return pd.read_json(filepath)
+            pd.read_json(filepath)
     
-    def preprocess_text(self, text_data, fit: bool = True):
+    def preprocess_text(self, text_data: list[str], fit: bool = True):
         if fit:
-            return self.vectorizer.fit_transform(text_data).toarray()
-        return self.vectorizer.transform(text_data).toarray()
+            self.vectorizer.fit_transform(text_data).toarray()
+        self.vectorizer.transform(text_data).toarray()
     
-    def preprocess_numeric(self, data, fit: bool = True):
+    def preprocess_numeric(self, data: np.ndarray, fit: bool = True):
         if fit:
-            return self.scaler.fit_transform(data)
-        return self.scaler.transform(data)
+            self.scaler.fit_transform(data)
+        self.scaler.transform(data)
     
-    def encode_labels(self, labels, fit: bool = True):
+    def encode_labels(self, labels: list[str], fit: bool = True): # Assuming label encoder, 1D list.
         if fit:
-            return self.encoder.fit_transform(labels)
-        return self.encoder.transform(labels)
+            self.encoder.fit_transform(labels)
+        self.encoder.transform(labels)
     
     def split_data(self, X, y, test_size: float = 0.2, random_state: int = 42):
-        return train_test_split(X, y, test_size=test_size, random_state=random_state)
+        train_test_split(X, y, test_size=test_size, random_state=random_state)
     
-    def train_classifier(self, X_train, y_train, n_estimators: int = 100):
+    def train_classifier(self, X_train, y_train, model_type: str, n_estimators: int = 100):
         self.model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
         self.model.fit(X_train, y_train)
-        return self.model
     
-    def train_regressor(self, X_train, y_train, n_estimators: int = 100):
+    def train_regressor(self, X_train, y_train, model_type: str, n_estimators: int = 100):
         self.model = RandomForestRegressor(n_estimators=n_estimators, random_state=42)
         self.model.fit(X_train, y_train)
-        return self.model
     
-    def train_clusterer(self, X_train, n_clusters: int = 3):
+    def train_clusterer(self, X_train, model_type: str, n_clusters: int = 3):
         self.model = KMeans(n_clusters=n_clusters, random_state=42)
         self.model.fit(X_train)
-        return self.model
-    
-    def train_custom(self, model, X_train, y_train=None):
-        self.model = model
-        if y_train is not None:
-            # Supervised learning
-            self.model.fit(X_train, y_train)
-        else:
-            # Unsupervised learning
-            self.model.fit(X_train)
-        return self.model
     
     def predict(self, X):
         return self.model.predict(X)
@@ -79,7 +64,7 @@ class MachineLearningInterface:
         if hasattr(self.model, 'predict_proba'):
             return self.model.predict_proba(X)
         else:
-            raise AttributeError("Current model doesn't support probability predictions")
+            print("Current model does not support probability predictions.")
     
     def get_cluster_labels(self, X=None):
         if hasattr(self.model, 'labels_'):
@@ -88,7 +73,7 @@ class MachineLearningInterface:
             else:
                 return self.model.predict(X)
         else:
-            raise AttributeError("Current model is not a clustering model")
+            print("Current model is not a clustering model")
 
 
     def save_model(self, model_name: str):
@@ -114,3 +99,11 @@ class MachineLearningInterface:
         self.vectorizer = preprocessors['vectorizer']
         
         return self.model
+
+
+    # Locking parameters / attributes 
+    # Change how im returning, dont need to return model each function... set up a definite get / return model function
+    # Change names or descriptors to be more clear on what each function does
+    # dont need a raise if there's no catch, need a try for it
+    # For Add a type parameter for each train model function to specify model type.
+    # Allow for specifying a model.
