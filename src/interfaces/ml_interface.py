@@ -37,7 +37,7 @@ class MachineLearningInterface:
             self.scaler.fit_transform(data)
         self.scaler.transform(data)
     
-    def encode_labels(self, labels: list[str], fit: bool = True): # Assuming label encoder, 1D list.
+    def encode_labels(self, labels: list[str], fit: bool = True): # Assuming label encoder, 1D list for labels.
         if fit:
             self.encoder.fit_transform(labels)
         self.encoder.transform(labels)
@@ -45,17 +45,24 @@ class MachineLearningInterface:
     def split_data(self, X, y, test_size: float = 0.2, random_state: int = 42):
         train_test_split(X, y, test_size=test_size, random_state=random_state)
     
-    def train_classifier(self, X_train, y_train, model_type: str, n_estimators: int = 100):
-        self.model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
-        self.model.fit(X_train, y_train)
+    # Train models to be worked upon, add more model cases.
+    def train_classifier(self, X_train: np.ndarray, model_type: str, y_train: pd.Series, n_estimators: int = 100):
+        match model_type:
+            case 'RandomForestClassifier':
+                self.model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
+                self.model.fit(X_train, y_train)
     
-    def train_regressor(self, X_train, y_train, model_type: str, n_estimators: int = 100):
-        self.model = RandomForestRegressor(n_estimators=n_estimators, random_state=42)
-        self.model.fit(X_train, y_train)
+    def train_regressor(self, X_train: np.ndarray, y_train: pd.Series, model_type: str, n_estimators: int = 100):
+        match model_type:
+            case 'RandomForestRegressor':
+                self.model = RandomForestRegressor(n_estimators=n_estimators, random_state=42)
+                self.model.fit(X_train, y_train)
     
-    def train_clusterer(self, X_train, model_type: str, n_clusters: int = 3):
-        self.model = KMeans(n_clusters=n_clusters, random_state=42)
-        self.model.fit(X_train)
+    def train_clusterer(self, X_train: np.ndarray, model_type: str, n_clusters: int = 3):
+        match model_type:
+            case 'KMeans':
+                    self.model = KMeans(n_clusters=n_clusters, random_state=42)
+                    self.model.fit(X_train)
     
     def predict(self, X):
         return self.model.predict(X)
@@ -97,13 +104,4 @@ class MachineLearningInterface:
         self.scaler = preprocessors['scaler']
         self.encoder = preprocessors['encoder']
         self.vectorizer = preprocessors['vectorizer']
-        
         return self.model
-
-
-    # Locking parameters / attributes 
-    # Change how im returning, dont need to return model each function... set up a definite get / return model function
-    # Change names or descriptors to be more clear on what each function does
-    # dont need a raise if there's no catch, need a try for it
-    # For Add a type parameter for each train model function to specify model type.
-    # Allow for specifying a model.
