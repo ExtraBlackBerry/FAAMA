@@ -36,17 +36,17 @@ class MachineLearningInterface:
     def preprocess_text(self, text_data: list[str], fit: bool = True):
         if fit:
             self.vectorizer.fit_transform(text_data).toarray()
-        self.vectorizer.transform(text_data).toarray()
+        return self.vectorizer.transform(text_data).toarray()
     
     def preprocess_numeric(self, data: np.ndarray, fit: bool = True):
         if fit:
             self.scaler.fit_transform(data)
-        self.scaler.transform(data)
+        return self.scaler.transform(data)
     
     def encode_labels(self, labels: list[str], fit: bool = True): # Assuming label encoder, 1D list for labels.
         if fit:
             self.encoder.fit_transform(labels)
-        self.encoder.transform(labels)
+        return self.encoder.transform(labels)
     
     def split_data(self, X, y, test_size: float = 0.2, random_state: int = 42):
         train_test_split(X, y, test_size=test_size, random_state=random_state)
@@ -113,10 +113,31 @@ class MachineLearningInterface:
             print("Current model is not a clustering model")
 
 
+    def get_available_models(self) -> list[str]:
+        model_files = self.models_dir.glob("*.joblib")
+        model_names = [file.stem.replace("_preprocessors", "") for file in model_files if "_preprocessors" not in file.stem]
+        return model_names
+
     def save_model(self, model_name: str):
         model_path = self.models_dir / f"{model_name}.joblib"
         preprocessors_path = self.models_dir / f"{model_name}_preprocessors.joblib"
         
+        # Name check for duplicates
+        if model_path.exists() or preprocessors_path.exists():
+            print(f"Model with name '{model_name}' already exists. Choose a different name.")
+            print("Existing models:", self.get_available_models())
+            print("Options of overwriting (1), renaming (2), cancelling (3):")
+            choice = input("Enter choice (1/2/3): ")
+            if choice == '1':
+                print("Overwriting existing model", model_name)
+            elif choice == '2':
+                new_name = input("Enter new model name: ")
+                # Resursive call for name check
+                self.save_model(new_name)
+            else:
+                print("Cancelling save operation.")
+                pass
+
         joblib.dump(self.model, model_path)
         joblib.dump({
             'scaler': self.scaler,
@@ -135,13 +156,6 @@ class MachineLearningInterface:
         self.encoder = preprocessors['encoder']
         self.vectorizer = preprocessors['vectorizer']
         return self.model
-    
-    def get_available_models(self) -> list[str]:
-        model_files = self.models_dir.glob("*.joblib")
-        model_names = [file.stem.replace("_preprocessors", "") for file in model_files if "_preprocessors" not in file.stem]
-        return model_names
-    
-
 
 
     # UNIT TEST
@@ -154,12 +168,12 @@ y = iris.target
 # Init interface
 ml_interface = MachineLearningInterface()
 
-
-
+print("Starting Unit Test.")
 print("Available models before training:", ml_interface.get_available_models())
 
 
 # Clkassification Test
+print("\n Classification Test")
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 X_train_scaled = ml_interface.preprocess_numeric(X_train, fit=True)
 X_test_scaled = ml_interface.preprocess_numeric(X_test, fit=False)
@@ -174,6 +188,7 @@ ml_interface.save_model("iris_rf_classifier")
 print("Available models after saving:", ml_interface.get_available_models())
 
 # Regression Test
+print("\n Regression Test")
 X_reg = X[:, 1:]  # Use features 2-4 as input
 y_reg = X[:, 0]   # Use first feature (sepal length) as target
 
@@ -192,6 +207,7 @@ ml_interface.save_model("iris_rf_regressor")
 print("Available models after saving regressor:", ml_interface.get_available_models())
 
 # Clulstering Test
+print("\n Clustering Test")
 X_scaled = ml_interface.preprocess_numeric(X, fit=True)
 ml_interface.train_clusterer(X_scaled, 'KMeans', n_clusters=3)
 cluster_labels = ml_interface.get_cluster_labels()
