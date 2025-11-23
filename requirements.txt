@@ -2,3 +2,8 @@ openai
 opencv-python
 python-dotenv
 scikit-learn
+pandas
+numpy
+joblib
+pathlib
+xgboost
