@@ -321,6 +321,13 @@ if __name__ == "__main__":
         my_comments = reddit.get_my_comments()
         my_comments_extracted = reddit.extract_my_comment_data(my_comments)
         print(pd.DataFrame(my_comments_extracted).head(5))
+
+        # =======================================
+        # GET SINGLE POST FROM A SUBREDDIT
+        # =======================================
+
+        posts = reddit.get_subreddit_posts('Pics', post_limit=5, sort='hot')
+        print(json.dumps(posts['data']['children'][0], indent=4))
         
         # =======================================
         # TODO:
