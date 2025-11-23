@@ -2,11 +2,17 @@ import pandas as pd
 import numpy as np
 import joblib
 from pathlib import Path
+# Model Imports
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
+from xgboost import XGBClassifier, XGBRegressor
+from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeRegressor
+
 
 class MachineLearningInterface:
     
@@ -45,11 +51,20 @@ class MachineLearningInterface:
     def split_data(self, X, y, test_size: float = 0.2, random_state: int = 42):
         train_test_split(X, y, test_size=test_size, random_state=random_state)
     
-    # Train models to be worked upon, add more model cases.
-    def train_classifier(self, X_train: np.ndarray, model_type: str, y_train: pd.Series, n_estimators: int = 100):
+    # Train models
+    def train_classifier(self, X_train: np.ndarray, y_train: pd.Series, model_type: str, n_estimators: int = 100):
         match model_type:
             case 'RandomForestClassifier':
                 self.model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
+                self.model.fit(X_train, y_train)
+            case 'XGBoostClassifier':
+                self.model = XGBClassifier(n_estimators=n_estimators, use_label_encoder=False, eval_metric='logloss', random_state=42)
+                self.model.fit(X_train, y_train)
+            case 'LogisticRegression':
+                self.model = LogisticRegression(max_iter=200, random_state=42)
+                self.model.fit(X_train, y_train)
+            case 'SVC':
+                self.model = SVC(probability=True, random_state=42)
                 self.model.fit(X_train, y_train)
     
     def train_regressor(self, X_train: np.ndarray, y_train: pd.Series, model_type: str, n_estimators: int = 100):
@@ -57,12 +72,27 @@ class MachineLearningInterface:
             case 'RandomForestRegressor':
                 self.model = RandomForestRegressor(n_estimators=n_estimators, random_state=42)
                 self.model.fit(X_train, y_train)
+            case 'XGBoostRegressor':
+                self.model = XGBRegressor(n_estimators=n_estimators, random_state=42)
+                self.model.fit(X_train, y_train)
+            case 'LinearRegression':
+                self.model = LinearRegression()
+                self.model.fit(X_train, y_train)
+            case 'DecisionTreeRegressor':
+                self.model = DecisionTreeRegressor(random_state=42)
+                self.model.fit(X_train, y_train)
     
     def train_clusterer(self, X_train: np.ndarray, model_type: str, n_clusters: int = 3):
         match model_type:
             case 'KMeans':
                     self.model = KMeans(n_clusters=n_clusters, random_state=42)
                     self.model.fit(X_train)
+            case 'DBSCAN':
+                self.model = DBSCAN(eps=0.5, min_samples=5)
+                self.model.fit(X_train)
+            case 'AgglomerativeClustering':
+                self.model = AgglomerativeClustering(n_clusters=n_clusters)
+                self.model.fit(X_train)
     
     def predict(self, X):
         return self.model.predict(X)
@@ -105,3 +135,71 @@ class MachineLearningInterface:
         self.encoder = preprocessors['encoder']
         self.vectorizer = preprocessors['vectorizer']
         return self.model
+    
+    def get_available_models(self) -> list[str]:
+        model_files = self.models_dir.glob("*.joblib")
+        model_names = [file.stem.replace("_preprocessors", "") for file in model_files if "_preprocessors" not in file.stem]
+        return model_names
+    
+
+
+
+    # UNIT TEST
+from sklearn.datasets import load_iris
+
+iris = load_iris()
+X = iris.data
+y = iris.target
+
+# Init interface
+ml_interface = MachineLearningInterface()
+
+
+
+print("Available models before training:", ml_interface.get_available_models())
+
+
+# Clkassification Test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train_scaled = ml_interface.preprocess_numeric(X_train, fit=True)
+X_test_scaled = ml_interface.preprocess_numeric(X_test, fit=False)
+
+ml_interface.train_classifier(X_train_scaled, y_train, 'RandomForestClassifier', n_estimators=50)
+predictions = ml_interface.predict(X_test_scaled)
+accuracy = (predictions == y_test).mean()
+print(f"Accuracy: {accuracy:.2f}")
+print(f"Predictions: {predictions[:5]}")
+
+ml_interface.save_model("iris_rf_classifier")
+print("Available models after saving:", ml_interface.get_available_models())
+
+# Regression Test
+X_reg = X[:, 1:]  # Use features 2-4 as input
+y_reg = X[:, 0]   # Use first feature (sepal length) as target
+
+X_train_reg, X_test_reg, y_train_reg, y_test_reg = train_test_split(X_reg, y_reg, test_size=0.2, random_state=42)
+X_train_reg_scaled = ml_interface.preprocess_numeric(X_train_reg, fit=True)
+X_test_reg_scaled = ml_interface.preprocess_numeric(X_test_reg, fit=False)
+
+ml_interface.train_regressor(X_train_reg_scaled, y_train_reg, 'RandomForestRegressor', n_estimators=50)
+predictions_reg = ml_interface.predict(X_test_reg_scaled)
+mse = np.mean((predictions_reg - y_test_reg) ** 2)
+print(f"Mean Squared Error: {mse:.4f}")
+print(f"Sample predictions: {predictions_reg[:5]}")
+print(f"Actual values: {y_test_reg[:5]}")
+
+ml_interface.save_model("iris_rf_regressor")
+print("Available models after saving regressor:", ml_interface.get_available_models())
+
+# Clulstering Test
+X_scaled = ml_interface.preprocess_numeric(X, fit=True)
+ml_interface.train_clusterer(X_scaled, 'KMeans', n_clusters=3)
+cluster_labels = ml_interface.get_cluster_labels()
+print(f"Cluster labels (first 10): {cluster_labels[:10]}")
+print(f"Unique clusters: {np.unique(cluster_labels)}")
+print(f"Cluster distribution: {np.bincount(cluster_labels)}")
+
+ml_interface.save_model("iris_kmeans_cluster")
+print("Available models after saving clusterer:", ml_interface.get_available_models())
+
+
