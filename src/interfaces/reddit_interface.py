@@ -1,6 +1,7 @@
 import requests, os, json
 import pandas as pd
 from typing import Any, Dict, List
+import time
 from dotenv import load_dotenv
 load_dotenv()
 class RedditInterface:
@@ -75,6 +76,7 @@ class RedditInterface:
                 'score': post['data']['score'],
                 'num_comments': post['data']['num_comments'],
                 'type': post['data']['post_hint'] if 'post_hint' in post['data'] else 'text',
+                # TODO: Check for images, NA if none else append list of urls
                 # Could maybe add some like sentiment analysis wit subjectivity/polarity, idk might be slow or maybe do somewhere else
             }
             posts.append(post_data)
@@ -193,13 +195,63 @@ class RedditInterface:
                                  headers=self.headers,
                                  data=data)
         return response.status_code == 200  # Return True if deletion was successful
+    
+    def scrape_subreddit_to_csv(self, subreddit: str, post_limit: int = 100, sort: str = 'hot', minutes: int = 60):
+        
+        for _ in range(minutes):
+            posts = self.get_subreddit_posts(subreddit, post_limit=post_limit, sort=sort)
+            # Check post ids against existing CSV to avoid duplicates already
+            # Extract data into csv
+            # Gonna save a csv per subreddit + sort type and keep appending to it
+            # add to csv if exists, else create new
+            
+            # Checking if csv already exists, getting ids if it does
+            if os.path.exists(f"{subreddit}_{sort}.csv"):
+                existing_df = pd.read_csv(f"{subreddit}_{sort}.csv")
+                existing_ids = set(existing_df['id'].tolist())
+            else:
+                existing_ids = set()
+            
+            # Extract and filter
+            extracted_posts = self.extract_post_data(posts)
+            new_posts = [post for post in extracted_posts if post['id'] not in existing_ids]
+            
+            # Add new posts to csv or make new one
+            if new_posts:
+                df = pd.DataFrame(new_posts)
+                if os.path.exists(f"{subreddit}_{sort}.csv"):
+                    df.to_csv(f"{subreddit}_{sort}.csv", mode='a', header=False, index=False)
+                else:
+                    df.to_csv(f"{subreddit}_{sort}.csv", index=False)
+                
+                print(f"Added {len(new_posts)} new posts to {subreddit}_{sort}.csv")
+            else:
+                print("No new posts to add.")
+        
+            time.sleep(60)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 # TESTING
 if __name__ == "__main__":
-    # Setup
+    # Test types
     retrieving = True
     posting = False
-    deleting = True
+    deleting = False
+    scraping = False
+    
+
     reddit = RedditInterface()
     
     # ========================================
@@ -338,3 +390,13 @@ if __name__ == "__main__":
         # TODO:
         # DELETE MOST RECENT COMMENT
         # ======================================
+        
+        # ========================================
+        # SCRAPING SUBREDDIT TO CSV
+        # ========================================
+        
+    if scraping:
+        print("\n" + "=" * 50)
+        print("SCRAPING SUBREDDIT TO CSV")
+        print("=" * 50)
+        reddit.scrape_subreddit_to_csv('AskReddit', post_limit=50, sort='new', minutes=10)
